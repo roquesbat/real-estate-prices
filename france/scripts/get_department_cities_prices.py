@@ -1,19 +1,21 @@
 import argparse
+import csv
+import datetime
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
 from time import sleep
+
+from more_itertools import unique_everseen
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import sys
-import csv
+from selenium.webdriver.support.ui import WebDriverWait
 from unidecode import unidecode
-import datetime
-from more_itertools import unique_everseen
-import subprocess
-import shutil
-import os
-from pathlib import Path
 
 
 def check_exists_by_xpath(xpath):
@@ -62,6 +64,18 @@ def normalize_CSV():
     )
 
 
+def update_last_updated():
+    last_updated_filepath = "../../last-updated.json"
+
+    with open(last_updated_filepath, "r") as jsonFile:
+        data = json.load(jsonFile)
+
+    data["france"][normalized_department_name][price_type] = str(today)
+
+    with open(last_updated_filepath, "w") as jsonFile:
+        json.dump(data, jsonFile)
+
+
 # to call this script
 # python3 get_department_cities_prices.py <department_name>
 parser = argparse.ArgumentParser(
@@ -91,12 +105,13 @@ with open("../data/communes-departement-region.csv", newline="") as csvfile:
             {"name": row["nom_commune_complet"], "zip_code": row["code_postal"]}
         )
 
-path = Path("../prices/" + unidecode(department_name.lower().replace(" ", "-")))
+normalized_department_name = unidecode(department_name.lower().replace(" ", "-"))
+path = Path("../prices/" + normalized_department_name)
 path.mkdir(parents=True, exist_ok=True)
 
 csv_output_filename = (
     "../prices/"
-    + unidecode(department_name.lower().replace(" ", "-"))
+    + normalized_department_name
     + "/prices-"
     + department_name.replace(" ", "-")
     + "-"
@@ -209,4 +224,5 @@ try:
 finally:
     # driver.quit()
     normalize_CSV()
+    update_last_updated()
     print("end")
