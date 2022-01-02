@@ -1,0 +1,4 @@
+.scrapy/
+crawls/
+geckodriver.log
+*.pyc
